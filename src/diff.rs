@@ -28,7 +28,9 @@ impl HomebrewDiffData {
             brews: Self::compute_package_diff(&current_state.installed_brews, &nix_intent.brews),
             casks: Self::compute_package_diff(&current_state.installed_casks, &nix_intent.casks),
             taps: Self::compute_set_diff(&current_state.installed_taps, &nix_intent.taps),
-            mas_apps: Self::compute_set_diff(&current_state.installed_mas_apps, &nix_intent.mas_apps),
+            // Note: nix-darwin only installs missing MAS apps, it doesn't uninstall extras
+            // So we only show additions, not removals
+            mas_apps: Self::compute_mas_additions_only(&current_state.installed_mas_apps, &nix_intent.mas_apps),
         }
     }
 
@@ -70,6 +72,17 @@ impl HomebrewDiffData {
         SetDiff { added, removed }
     }
 
+    /// Compute only additions for MAS apps since nix-darwin doesn't uninstall them
+    fn compute_mas_additions_only(current: &HashSet<String>, intended: &HashSet<String>) -> SetDiff {
+        let mut added: Vec<String> = intended.difference(current).cloned().collect();
+        added.sort();
+
+        SetDiff { 
+            added,
+            removed: Vec::new(), // nix-darwin doesn't uninstall MAS apps
+        }
+    }
+
     /// Check if there are any changes
     pub fn has_changes(&self) -> bool {
         !self.brews.added.is_empty()
@@ -79,7 +92,7 @@ impl HomebrewDiffData {
             || !self.taps.added.is_empty()
             || !self.taps.removed.is_empty()
             || !self.mas_apps.added.is_empty()
-            || !self.mas_apps.removed.is_empty()
+            // Note: mas_apps.removed is always empty since nix-darwin doesn't uninstall MAS apps
     }
 
     /// Get total count of changes
@@ -91,7 +104,7 @@ impl HomebrewDiffData {
             + self.taps.added.len()
             + self.taps.removed.len()
             + self.mas_apps.added.len()
-            + self.mas_apps.removed.len()
+            // Note: mas_apps.removed is always empty since nix-darwin doesn't uninstall MAS apps
     }
 }
 
@@ -155,5 +168,24 @@ mod tests {
         intent_with_brew.brews.insert("git".to_string());
         let diff_with_changes = HomebrewDiffData::compute(&state, &intent_with_brew);
         assert!(diff_with_changes.has_changes());
+    }
+
+    #[test]
+    fn test_mas_additions_only() {
+        // Test that MAS apps only show additions, never removals
+        let mut current = HashSet::new();
+        current.insert("Existing App (123)".to_string());
+        current.insert("To Be Removed (456)".to_string());
+
+        let mut intended = HashSet::new();
+        intended.insert("Existing App (123)".to_string());
+        intended.insert("New App (789)".to_string());
+
+        let diff = HomebrewDiffData::compute_mas_additions_only(&current, &intended);
+
+        // Should only show the new app as addition
+        assert_eq!(diff.added, vec!["New App (789)"]);
+        // Should NOT show "To Be Removed" in removals since nix-darwin doesn't uninstall MAS apps
+        assert!(diff.removed.is_empty());
     }
 }

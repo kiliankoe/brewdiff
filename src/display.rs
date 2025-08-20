@@ -82,7 +82,6 @@ pub fn write_diff<W: Write>(writer: &mut W, diff_data: &HomebrewDiffData) -> Res
         if !diff_data.brews.removed.is_empty()
             || !diff_data.casks.removed.is_empty()
             || !diff_data.taps.removed.is_empty()
-            || !diff_data.mas_apps.removed.is_empty()
         {
             writeln!(writer)?;
             lines_written += 1;
@@ -93,7 +92,6 @@ pub fn write_diff<W: Write>(writer: &mut W, diff_data: &HomebrewDiffData) -> Res
     if !diff_data.brews.removed.is_empty()
         || !diff_data.casks.removed.is_empty()
         || !diff_data.taps.removed.is_empty()
-        || !diff_data.mas_apps.removed.is_empty()
     {
         writeln!(writer, "REMOVED")?;
         lines_written += 1;
@@ -125,14 +123,8 @@ pub fn write_diff<W: Write>(writer: &mut W, diff_data: &HomebrewDiffData) -> Res
             }
         }
 
-        if !diff_data.mas_apps.removed.is_empty() {
-            writeln!(writer, "App Store")?;
-            lines_written += 1;
-            for app in &diff_data.mas_apps.removed {
-                writeln!(writer, "[{}] {}", "R".red().bold(), app)?;
-                lines_written += 1;
-            }
-        }
+        // Note: We don't show removed MAS apps since nix-darwin doesn't uninstall them
+        // The mas_apps.removed list will always be empty due to compute_mas_additions_only
     }
 
     Ok(lines_written)
