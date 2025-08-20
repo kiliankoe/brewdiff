@@ -5,6 +5,8 @@ edition = "2021"
 authors = ["Kilian Koeltzsch"]
 description = "Homebrew diff functionality for nix-darwin configurations"
 license = "MIT"
+homepage = "https://github.com/kiliankoe/brewdiff"
+repository = "https://github.com/kiliankoe/brewdiff"
 
 [dependencies]
 thiserror = "2.0"
