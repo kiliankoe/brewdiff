@@ -14,6 +14,26 @@ This crate is designed to show users what Homebrew changes will occur when they 
 - Colorized output with clear add/remove indicators
 - Thread-based async processing (mirrors dix pattern)
 
+## Example Output
+
+```
+<<< /run/current-system
+>>> /nix/var/nix/profiles/system-123-link
+
+ADDED
+Formulae
+[A] curl
+Casks
+[A] firefox
+[A] visual-studio-code
+
+REMOVED
+Formulae
+[R] wget
+Casks
+[R] slack
+```
+
 ## How It Works
 
 1. Reads the nix-darwin activation script to find the Brewfile path, then parses that Brewfile to extract Homebrew intent

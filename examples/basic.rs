@@ -42,9 +42,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Show the diff
     println!("\n🔄 Differences (current vs intended):");
-    let lines = brewdiff::write_homebrew_diffln(&mut std::io::stdout(), current_profile)?;
+    let lines = brewdiff::write_homebrew_diffln(
+        &mut std::io::stdout(),
+        // Current system as "old"
+        Path::new("/run/current-system"),
+        // Same profile as "new" to show drift
+        current_profile,
+    )?;
 
-    if lines == 1 {
+    if lines == 3 {
         println!("  Your Homebrew installation matches the nix-darwin configuration!");
     }
 

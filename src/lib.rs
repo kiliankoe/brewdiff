@@ -24,8 +24,22 @@ pub fn spawn_homebrew_diff(new_profile: PathBuf) -> JoinHandle<Result<HomebrewDi
 }
 
 /// Write homebrew diff output, returns number of lines written
-/// Mirrors dix's write pattern
-pub fn write_homebrew_diffln<W: Write>(writer: &mut W, new_profile: &Path) -> Result<usize> {
+/// This version includes the header with profile paths (matches dix exactly)
+pub fn write_homebrew_diffln<W: Write>(
+    writer: &mut W,
+    old_profile: &Path,
+    new_profile: &Path,
+) -> Result<usize> {
+    let current_state = HomebrewState::detect()?;
+    let nix_intent = HomebrewIntent::extract(new_profile)?;
+    let diff_data = HomebrewDiffData::compute(&current_state, &nix_intent);
+
+    display::write_diff_with_header(writer, old_profile, new_profile, &diff_data)
+}
+
+/// Write homebrew diff output without header
+/// Use this when you want just the diff content
+pub fn write_homebrew_diff_content<W: Write>(writer: &mut W, new_profile: &Path) -> Result<usize> {
     let current_state = HomebrewState::detect()?;
     let nix_intent = HomebrewIntent::extract(new_profile)?;
     let diff_data = HomebrewDiffData::compute(&current_state, &nix_intent);

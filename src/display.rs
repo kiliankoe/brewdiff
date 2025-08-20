@@ -2,107 +2,125 @@ use crate::diff::HomebrewDiffData;
 use crate::error::Result;
 use owo_colors::OwoColorize;
 use std::io::Write;
+use std::path::Path;
+
+/// Write the diff output with header, returns number of lines written
+/// Matches dix's format exactly
+pub fn write_diff_with_header<W: Write>(
+    writer: &mut W,
+    current_profile: &Path,
+    new_profile: &Path,
+    diff_data: &HomebrewDiffData,
+) -> Result<usize> {
+    let mut lines_written = 0;
+
+    // Header like dix
+    writeln!(writer, "<<< {}", current_profile.display())?;
+    writeln!(writer, ">>> {}", new_profile.display())?;
+    writeln!(writer)?;
+    lines_written += 3;
+
+    let inner_lines = write_diff(writer, diff_data)?;
+    lines_written += inner_lines;
+
+    Ok(lines_written)
+}
 
 /// Write the diff output, returns number of lines written
 pub fn write_diff<W: Write>(writer: &mut W, diff_data: &HomebrewDiffData) -> Result<usize> {
     let mut lines_written = 0;
 
     if !diff_data.has_changes() {
-        writeln!(writer, "No Homebrew changes detected")?;
-        return Ok(1);
+        return Ok(0);
     }
 
-    // Formulae section
-    if !diff_data.brews.added.is_empty() || !diff_data.brews.removed.is_empty() {
-        writeln!(writer, "\n📦 Homebrew Formulae:")?;
+    // Added section
+    if !diff_data.brews.added.is_empty() || !diff_data.casks.added.is_empty() || !diff_data.taps.added.is_empty() {
+        writeln!(writer, "ADDED")?;
         lines_written += 1;
 
-        for pkg in &diff_data.brews.added {
-            writeln!(writer, "  {} {}", "+".green(), pkg)?;
+        if !diff_data.taps.added.is_empty() {
+            writeln!(writer, "Taps")?;
             lines_written += 1;
+            for tap in &diff_data.taps.added {
+                writeln!(writer, "[{}] {}", "A".green().bold(), tap)?;
+                lines_written += 1;
+            }
         }
 
-        for pkg in &diff_data.brews.removed {
-            writeln!(writer, "  {} {}", "-".red(), pkg)?;
+        if !diff_data.brews.added.is_empty() {
+            writeln!(writer, "Formulae")?;
+            lines_written += 1;
+            for pkg in &diff_data.brews.added {
+                writeln!(writer, "[{}] {}", "A".green().bold(), pkg)?;
+                lines_written += 1;
+            }
+        }
+
+        if !diff_data.casks.added.is_empty() {
+            writeln!(writer, "Casks")?;
+            lines_written += 1;
+            for pkg in &diff_data.casks.added {
+                writeln!(writer, "[{}] {}", "A".green().bold(), pkg)?;
+                lines_written += 1;
+            }
+        }
+
+        if !diff_data.brews.removed.is_empty() || !diff_data.casks.removed.is_empty() || !diff_data.taps.removed.is_empty() {
+            writeln!(writer)?;
             lines_written += 1;
         }
     }
 
-    // Casks section
-    if !diff_data.casks.added.is_empty() || !diff_data.casks.removed.is_empty() {
-        writeln!(writer, "\n🍺 Homebrew Casks:")?;
+    // Removed section
+    if !diff_data.brews.removed.is_empty() || !diff_data.casks.removed.is_empty() || !diff_data.taps.removed.is_empty() {
+        writeln!(writer, "REMOVED")?;
         lines_written += 1;
 
-        for pkg in &diff_data.casks.added {
-            writeln!(writer, "  {} {}", "+".green(), pkg)?;
+        if !diff_data.taps.removed.is_empty() {
+            writeln!(writer, "Taps")?;
             lines_written += 1;
+            for tap in &diff_data.taps.removed {
+                writeln!(writer, "[{}] {}", "R".red().bold(), tap)?;
+                lines_written += 1;
+            }
         }
 
-        for pkg in &diff_data.casks.removed {
-            writeln!(writer, "  {} {}", "-".red(), pkg)?;
+        if !diff_data.brews.removed.is_empty() {
+            writeln!(writer, "Formulae")?;
             lines_written += 1;
-        }
-    }
-
-    // Taps section
-    if !diff_data.taps.added.is_empty() || !diff_data.taps.removed.is_empty() {
-        writeln!(writer, "\n🚰 Homebrew Taps:")?;
-        lines_written += 1;
-
-        for tap in &diff_data.taps.added {
-            writeln!(writer, "  {} {}", "+".green(), tap)?;
-            lines_written += 1;
+            for pkg in &diff_data.brews.removed {
+                writeln!(writer, "[{}] {}", "R".red().bold(), pkg)?;
+                lines_written += 1;
+            }
         }
 
-        for tap in &diff_data.taps.removed {
-            writeln!(writer, "  {} {}", "-".red(), tap)?;
+        if !diff_data.casks.removed.is_empty() {
+            writeln!(writer, "Casks")?;
             lines_written += 1;
+            for pkg in &diff_data.casks.removed {
+                writeln!(writer, "[{}] {}", "R".red().bold(), pkg)?;
+                lines_written += 1;
+            }
         }
     }
 
     Ok(lines_written)
 }
 
-/// Write statistics about the diff
+/// Write statistics about the diff (optional, for detailed summaries)
 pub fn write_stats<W: Write>(writer: &mut W, diff_data: &HomebrewDiffData) -> Result<()> {
     if !diff_data.has_changes() {
         return Ok(());
     }
 
-    writeln!(writer, "\nSummary:")?;
+    let total_added = diff_data.brews.added.len() + diff_data.casks.added.len() + diff_data.taps.added.len();
+    let total_removed = diff_data.brews.removed.len() + diff_data.casks.removed.len() + diff_data.taps.removed.len();
 
-    if !diff_data.brews.added.is_empty() || !diff_data.brews.removed.is_empty() {
-        writeln!(
-            writer,
-            "  Formulae: {} added, {} removed",
-            diff_data.brews.added.len().green(),
-            diff_data.brews.removed.len().red()
-        )?;
-    }
-
-    if !diff_data.casks.added.is_empty() || !diff_data.casks.removed.is_empty() {
-        writeln!(
-            writer,
-            "  Casks: {} added, {} removed",
-            diff_data.casks.added.len().green(),
-            diff_data.casks.removed.len().red()
-        )?;
-    }
-
-    if !diff_data.taps.added.is_empty() || !diff_data.taps.removed.is_empty() {
-        writeln!(
-            writer,
-            "  Taps: {} added, {} removed",
-            diff_data.taps.added.len().green(),
-            diff_data.taps.removed.len().red()
-        )?;
-    }
-
-    writeln!(
-        writer,
-        "  Total changes: {}",
-        diff_data.total_changes().yellow()
-    )?;
+    writeln!(writer)?;
+    writeln!(writer, "HOMEBREW: {} added, {} removed", 
+             total_added.green(), 
+             total_removed.red())?;
 
     Ok(())
 }
@@ -123,10 +141,9 @@ mod tests {
         let mut output = Vec::new();
 
         let lines = write_diff(&mut output, &diff).unwrap();
-        let output_str = String::from_utf8(output).unwrap();
-
-        assert_eq!(lines, 1);
-        assert!(output_str.contains("No Homebrew changes"));
+        
+        assert_eq!(lines, 0); // No output for no changes
+        assert!(output.is_empty());
     }
 
     #[test]
@@ -138,12 +155,17 @@ mod tests {
         let mut output = Vec::new();
         let lines = write_diff(&mut output, &diff).unwrap();
 
-        assert_eq!(lines, 4); // Header + 2 additions + 1 removal
+        // ADDED header + Formulae header + 2 brews + blank line + REMOVED header + Formulae header + 1 brew = 8 lines
+        assert_eq!(lines, 8);
         let output_str = String::from_utf8(output).unwrap();
-        assert!(output_str.contains("Homebrew Formulae"));
-        assert!(output_str.contains("wget"));
-        assert!(output_str.contains("curl"));
-        assert!(output_str.contains("git"));
+        // Strip color codes for testing
+        let clean = strip_ansi_codes(&output_str);
+        assert!(clean.contains("ADDED"));
+        assert!(clean.contains("Formulae"));
+        assert!(clean.contains("[A] wget"));
+        assert!(clean.contains("[A] curl"));
+        assert!(clean.contains("REMOVED"));
+        assert!(clean.contains("[R] git"));
     }
 
     #[test]
@@ -156,11 +178,7 @@ mod tests {
         write_stats(&mut output, &diff).unwrap();
 
         let output_str = String::from_utf8(output).unwrap();
-        // Remove ANSI color codes for easier testing
         let clean_output = strip_ansi_codes(&output_str);
-        assert!(clean_output.contains("Summary"));
-        assert!(clean_output.contains("Formulae: 1 added, 0 removed"));
-        assert!(clean_output.contains("Casks: 0 added, 1 removed"));
-        assert!(clean_output.contains("Total changes: 2"));
+        assert!(clean_output.contains("HOMEBREW: 1 added, 1 removed"));
     }
 }
