@@ -10,6 +10,7 @@ pub struct HomebrewIntent {
     pub brews: HashSet<String>,
     pub casks: HashSet<String>,
     pub taps: HashSet<String>,
+    pub mas_apps: HashSet<String>, // Store as "name (id)" for display
 }
 
 impl HomebrewIntent {
@@ -70,8 +71,13 @@ impl HomebrewIntent {
                 if let Some(tap) = Self::extract_quoted_value(line) {
                     intent.taps.insert(tap);
                 }
+            } else if line.starts_with("mas \"") {
+                // Parse mas "App Name", id: 1234567890
+                if let Some((name, id)) = Self::parse_mas_line(line) {
+                    // Store as "App Name (1234567890)" for display
+                    intent.mas_apps.insert(format!("{} ({})", name, id));
+                }
             }
-            // TODO: Add support for mas apps when needed
         }
 
         Ok(intent)
@@ -81,6 +87,14 @@ impl HomebrewIntent {
         let start = line.find('"')?;
         let end = line[start + 1..].find('"')?;
         Some(line[start + 1..start + 1 + end].to_string())
+    }
+
+    fn parse_mas_line(line: &str) -> Option<(String, String)> {
+        // Parse: mas "App Name", id: 1234567890
+        let name = Self::extract_quoted_value(line)?;
+        let id_part = line.split("id:").nth(1)?;
+        let id = id_part.trim().to_string();
+        Some((name, id))
     }
 }
 

@@ -7,6 +7,7 @@ pub struct HomebrewDiffData {
     pub brews: PackageDiff,
     pub casks: PackageDiff,
     pub taps: SetDiff,
+    pub mas_apps: SetDiff,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -27,6 +28,7 @@ impl HomebrewDiffData {
             brews: Self::compute_package_diff(&current_state.installed_brews, &nix_intent.brews),
             casks: Self::compute_package_diff(&current_state.installed_casks, &nix_intent.casks),
             taps: Self::compute_set_diff(&current_state.installed_taps, &nix_intent.taps),
+            mas_apps: Self::compute_set_diff(&current_state.installed_mas_apps, &nix_intent.mas_apps),
         }
     }
 
@@ -76,6 +78,8 @@ impl HomebrewDiffData {
             || !self.casks.removed.is_empty()
             || !self.taps.added.is_empty()
             || !self.taps.removed.is_empty()
+            || !self.mas_apps.added.is_empty()
+            || !self.mas_apps.removed.is_empty()
     }
 
     /// Get total count of changes
@@ -86,6 +90,8 @@ impl HomebrewDiffData {
             + self.casks.removed.len()
             + self.taps.added.len()
             + self.taps.removed.len()
+            + self.mas_apps.added.len()
+            + self.mas_apps.removed.len()
     }
 }
 

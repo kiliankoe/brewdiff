@@ -8,6 +8,7 @@ pub struct HomebrewState {
     pub installed_brews: HashMap<String, String>, // name -> version
     pub installed_casks: HashMap<String, String>, // name -> version
     pub installed_taps: HashSet<String>,
+    pub installed_mas_apps: HashSet<String>, // Store as "name (id)" for display
 }
 
 impl HomebrewState {
@@ -21,6 +22,7 @@ impl HomebrewState {
             installed_brews: Self::get_installed_formulae()?,
             installed_casks: Self::get_installed_casks()?,
             installed_taps: Self::get_taps()?,
+            installed_mas_apps: Self::get_mas_apps()?,
         })
     }
 
@@ -76,6 +78,52 @@ impl HomebrewState {
 
         let content = String::from_utf8(output.stdout)?;
         Ok(content.lines().map(|s| s.to_string()).collect())
+    }
+
+    fn get_mas_apps() -> Result<HashSet<String>> {
+        // Check if mas is installed
+        let mas_check = Command::new("which")
+            .arg("mas")
+            .output()
+            .map_err(|e| Error::CommandFailed(format!("which mas failed: {}", e)))?;
+
+        if !mas_check.status.success() {
+            // mas not installed, no MAS apps
+            return Ok(HashSet::new());
+        }
+
+        let output = Command::new("mas")
+            .arg("list")
+            .output()
+            .map_err(|e| Error::CommandFailed(format!("mas list failed: {}", e)))?;
+
+        if !output.status.success() {
+            return Ok(HashSet::new());
+        }
+
+        let content = String::from_utf8(output.stdout)?;
+        let mut apps = HashSet::new();
+        
+        // Parse output format: "1234567890  App Name     (1.2.3)"
+        for line in content.lines() {
+            // Split on whitespace and filter out empty strings
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() >= 2 {
+                let id = parts[0];
+                // Find where the version starts (last item in parentheses)
+                let version_start = parts.iter().rposition(|p| p.starts_with('('));
+                let name_parts = if let Some(idx) = version_start {
+                    &parts[1..idx]
+                } else {
+                    &parts[1..]
+                };
+                let name = name_parts.join(" ");
+                // Store as "App Name (id)" to match intent format
+                apps.insert(format!("{} ({})", name, id));
+            }
+        }
+
+        Ok(apps)
     }
 
     fn parse_list_versions_output(output: &[u8]) -> Result<HashMap<String, String>> {

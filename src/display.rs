@@ -35,7 +35,11 @@ pub fn write_diff<W: Write>(writer: &mut W, diff_data: &HomebrewDiffData) -> Res
     }
 
     // Added section
-    if !diff_data.brews.added.is_empty() || !diff_data.casks.added.is_empty() || !diff_data.taps.added.is_empty() {
+    if !diff_data.brews.added.is_empty()
+        || !diff_data.casks.added.is_empty()
+        || !diff_data.taps.added.is_empty()
+        || !diff_data.mas_apps.added.is_empty()
+    {
         writeln!(writer, "ADDED")?;
         lines_written += 1;
 
@@ -66,14 +70,31 @@ pub fn write_diff<W: Write>(writer: &mut W, diff_data: &HomebrewDiffData) -> Res
             }
         }
 
-        if !diff_data.brews.removed.is_empty() || !diff_data.casks.removed.is_empty() || !diff_data.taps.removed.is_empty() {
+        if !diff_data.mas_apps.added.is_empty() {
+            writeln!(writer, "App Store")?;
+            lines_written += 1;
+            for app in &diff_data.mas_apps.added {
+                writeln!(writer, "[{}] {}", "A".green().bold(), app)?;
+                lines_written += 1;
+            }
+        }
+
+        if !diff_data.brews.removed.is_empty()
+            || !diff_data.casks.removed.is_empty()
+            || !diff_data.taps.removed.is_empty()
+            || !diff_data.mas_apps.removed.is_empty()
+        {
             writeln!(writer)?;
             lines_written += 1;
         }
     }
 
     // Removed section
-    if !diff_data.brews.removed.is_empty() || !diff_data.casks.removed.is_empty() || !diff_data.taps.removed.is_empty() {
+    if !diff_data.brews.removed.is_empty()
+        || !diff_data.casks.removed.is_empty()
+        || !diff_data.taps.removed.is_empty()
+        || !diff_data.mas_apps.removed.is_empty()
+    {
         writeln!(writer, "REMOVED")?;
         lines_written += 1;
 
@@ -103,6 +124,15 @@ pub fn write_diff<W: Write>(writer: &mut W, diff_data: &HomebrewDiffData) -> Res
                 lines_written += 1;
             }
         }
+
+        if !diff_data.mas_apps.removed.is_empty() {
+            writeln!(writer, "App Store")?;
+            lines_written += 1;
+            for app in &diff_data.mas_apps.removed {
+                writeln!(writer, "[{}] {}", "R".red().bold(), app)?;
+                lines_written += 1;
+            }
+        }
     }
 
     Ok(lines_written)
@@ -114,13 +144,19 @@ pub fn write_stats<W: Write>(writer: &mut W, diff_data: &HomebrewDiffData) -> Re
         return Ok(());
     }
 
-    let total_added = diff_data.brews.added.len() + diff_data.casks.added.len() + diff_data.taps.added.len();
-    let total_removed = diff_data.brews.removed.len() + diff_data.casks.removed.len() + diff_data.taps.removed.len();
+    let total_added =
+        diff_data.brews.added.len() + diff_data.casks.added.len() + diff_data.taps.added.len();
+    let total_removed = diff_data.brews.removed.len()
+        + diff_data.casks.removed.len()
+        + diff_data.taps.removed.len();
 
     writeln!(writer)?;
-    writeln!(writer, "HOMEBREW: {} added, {} removed", 
-             total_added.green(), 
-             total_removed.red())?;
+    writeln!(
+        writer,
+        "HOMEBREW: {} added, {} removed",
+        total_added.green(),
+        total_removed.red()
+    )?;
 
     Ok(())
 }
@@ -141,7 +177,7 @@ mod tests {
         let mut output = Vec::new();
 
         let lines = write_diff(&mut output, &diff).unwrap();
-        
+
         assert_eq!(lines, 0); // No output for no changes
         assert!(output.is_empty());
     }
