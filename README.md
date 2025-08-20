@@ -37,9 +37,13 @@ Casks
 ## How It Works
 
 1. Reads the nix-darwin activation script to find the Brewfile path, then parses that Brewfile to extract Homebrew intent
-2. Queries Homebrew directly using `brew list` commands for current state
+2. Queries Homebrew directly for current state:
+   - Uses `brew leaves` for formulae (only user-installed packages, not dependencies)
+   - Uses `brew list --cask` for casks
+   - Uses `brew tap` for taps
+   - Uses `mas list` for Mac App Store apps
 3. Diffs current state with intended state to find additions and removals
-4. Formats the diff with colors and emoji indicators
+4. Formats the diff with colors and clear indicators
 
 ## API
 

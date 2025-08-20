@@ -41,16 +41,42 @@ impl HomebrewState {
     }
 
     fn get_installed_formulae() -> Result<HashMap<String, String>> {
-        let output = Command::new(Self::get_brew_command())
-            .args(["list", "--formula", "--versions"])
+        // Use 'brew leaves' to get only user-installed formulae (not dependencies)
+        // This avoids showing confusing removals for dependencies like pcre2 that
+        // are only installed because they're required by other formulae.
+        // Users typically only care about the top-level packages they explicitly installed.
+        let leaves_output = Command::new(Self::get_brew_command())
+            .args(["leaves"])
             .output()
-            .map_err(|e| Error::CommandFailed(format!("brew list failed: {}", e)))?;
+            .map_err(|e| Error::CommandFailed(format!("brew leaves failed: {}", e)))?;
 
-        if !output.status.success() {
+        if !leaves_output.status.success() {
             return Ok(HashMap::new());
         }
 
-        Self::parse_list_versions_output(&output.stdout)
+        let leaves_str = String::from_utf8(leaves_output.stdout)?;
+        let leaves: Vec<String> = leaves_str.lines().map(|s| s.to_string()).collect();
+        
+        if leaves.is_empty() {
+            return Ok(HashMap::new());
+        }
+
+        // Get versions for the leaves
+        let mut args = vec!["list", "--versions"];
+        for leaf in &leaves {
+            args.push(leaf);
+        }
+        
+        let versions_output = Command::new(Self::get_brew_command())
+            .args(&args)
+            .output()
+            .map_err(|e| Error::CommandFailed(format!("brew list --versions failed: {}", e)))?;
+
+        if !versions_output.status.success() {
+            return Ok(HashMap::new());
+        }
+
+        Self::parse_list_versions_output(&versions_output.stdout)
     }
 
     fn get_installed_casks() -> Result<HashMap<String, String>> {
