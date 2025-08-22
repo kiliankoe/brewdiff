@@ -1,12 +1,14 @@
 [package]
 name = "brewdiff"
 version = "0.1.0"
+readme = "README.md"
 edition = "2021"
 authors = ["Kilian Koeltzsch"]
 description = "Homebrew diff functionality for nix-darwin configurations"
 license = "MIT"
 homepage = "https://github.com/kiliankoe/brewdiff"
 repository = "https://github.com/kiliankoe/brewdiff"
+keywords = ["nix", "nix-darwin", "homebrew", "macOS"]
 
 [dependencies]
 thiserror = "2.0"
