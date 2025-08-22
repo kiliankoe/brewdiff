@@ -142,13 +142,14 @@ pub fn write_stats<W: Write>(writer: &mut W, diff_data: &HomebrewDiffData) -> Re
         + diff_data.casks.removed.len()
         + diff_data.taps.removed.len();
 
-    writeln!(writer)?;
     writeln!(
         writer,
-        "HOMEBREW: {} added, {} removed",
+        "{}: {} added, {} removed",
+        "HOMEBREW".bold(),
         total_added.green(),
         total_removed.red()
     )?;
+    writeln!(writer)?;
 
     Ok(())
 }

@@ -56,7 +56,7 @@ impl HomebrewState {
 
         let leaves_str = String::from_utf8(leaves_output.stdout)?;
         let leaves: Vec<String> = leaves_str.lines().map(|s| s.to_string()).collect();
-        
+
         if leaves.is_empty() {
             return Ok(HashMap::new());
         }
@@ -66,7 +66,7 @@ impl HomebrewState {
         for leaf in &leaves {
             args.push(leaf);
         }
-        
+
         let versions_output = Command::new(Self::get_brew_command())
             .args(&args)
             .output()
@@ -129,7 +129,7 @@ impl HomebrewState {
 
         let content = String::from_utf8(output.stdout)?;
         let mut apps = HashSet::new();
-        
+
         // Parse output format: "1234567890  App Name     (1.2.3)"
         for line in content.lines() {
             // Split on whitespace and filter out empty strings

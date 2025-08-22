@@ -30,7 +30,10 @@ impl HomebrewDiffData {
             taps: Self::compute_set_diff(&current_state.installed_taps, &nix_intent.taps),
             // Note: nix-darwin only installs missing MAS apps, it doesn't uninstall extras
             // So we only show additions, not removals
-            mas_apps: Self::compute_mas_additions_only(&current_state.installed_mas_apps, &nix_intent.mas_apps),
+            mas_apps: Self::compute_mas_additions_only(
+                &current_state.installed_mas_apps,
+                &nix_intent.mas_apps,
+            ),
         }
     }
 
@@ -73,11 +76,14 @@ impl HomebrewDiffData {
     }
 
     /// Compute only additions for MAS apps since nix-darwin doesn't uninstall them
-    fn compute_mas_additions_only(current: &HashSet<String>, intended: &HashSet<String>) -> SetDiff {
+    fn compute_mas_additions_only(
+        current: &HashSet<String>,
+        intended: &HashSet<String>,
+    ) -> SetDiff {
         let mut added: Vec<String> = intended.difference(current).cloned().collect();
         added.sort();
 
-        SetDiff { 
+        SetDiff {
             added,
             removed: Vec::new(), // nix-darwin doesn't uninstall MAS apps
         }
@@ -92,7 +98,7 @@ impl HomebrewDiffData {
             || !self.taps.added.is_empty()
             || !self.taps.removed.is_empty()
             || !self.mas_apps.added.is_empty()
-            // Note: mas_apps.removed is always empty since nix-darwin doesn't uninstall MAS apps
+        // Note: mas_apps.removed is always empty since nix-darwin doesn't uninstall MAS apps
     }
 
     /// Get total count of changes
@@ -104,7 +110,7 @@ impl HomebrewDiffData {
             + self.taps.added.len()
             + self.taps.removed.len()
             + self.mas_apps.added.len()
-            // Note: mas_apps.removed is always empty since nix-darwin doesn't uninstall MAS apps
+        // Note: mas_apps.removed is always empty since nix-darwin doesn't uninstall MAS apps
     }
 }
 
