@@ -1,6 +1,6 @@
 [package]
 name = "brewdiff"
-version = "0.1.0"
+version = "0.1.1"
 readme = "README.md"
 edition = "2021"
 authors = ["Kilian Koeltzsch"]
