@@ -19,6 +19,11 @@ impl HomebrewIntent {
         Self::extract_from_activation_script(profile)
     }
 
+    /// Check if there are any packages configured
+    pub fn has_packages(&self) -> bool {
+        !self.brews.is_empty() || !self.casks.is_empty() || !self.mas_apps.is_empty()
+    }
+
     fn extract_from_activation_script(profile: &Path) -> Result<Self> {
         let activate_path = profile.join("activate");
         if !activate_path.exists() {
