@@ -1,7 +1,7 @@
 use crate::diff::HomebrewDiffData;
 use crate::error::Result;
 use owo_colors::OwoColorize;
-use std::io::Write;
+use std::fmt::Write;
 use std::path::Path;
 
 /// Write the diff output with header, returns number of lines written
@@ -167,7 +167,7 @@ mod tests {
     #[test]
     fn test_write_diff_no_changes() {
         let diff = HomebrewDiffData::default();
-        let mut output = Vec::new();
+        let mut output = String::new();
 
         let lines = write_diff(&mut output, &diff).unwrap();
 
@@ -181,14 +181,13 @@ mod tests {
         diff.brews.added = vec!["wget".to_string(), "curl".to_string()];
         diff.brews.removed = vec!["git".to_string()];
 
-        let mut output = Vec::new();
+        let mut output = String::new();
         let lines = write_diff(&mut output, &diff).unwrap();
 
         // ADDED header + Formulae header + 2 brews + blank line + REMOVED header + Formulae header + 1 brew = 8 lines
         assert_eq!(lines, 8);
-        let output_str = String::from_utf8(output).unwrap();
         // Strip color codes for testing
-        let clean = strip_ansi_codes(&output_str);
+        let clean = strip_ansi_codes(&output);
         assert!(clean.contains("ADDED"));
         assert!(clean.contains("Formulae"));
         assert!(clean.contains("[A] wget"));
@@ -203,11 +202,10 @@ mod tests {
         diff.brews.added = vec!["wget".to_string()];
         diff.casks.removed = vec!["firefox".to_string()];
 
-        let mut output = Vec::new();
+        let mut output = String::new();
         write_stats(&mut output, &diff).unwrap();
 
-        let output_str = String::from_utf8(output).unwrap();
-        let clean_output = strip_ansi_codes(&output_str);
+        let clean_output = strip_ansi_codes(&output);
         assert!(clean_output.contains("HOMEBREW: 1 added, 1 removed"));
     }
 }

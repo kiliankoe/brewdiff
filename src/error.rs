@@ -1,3 +1,4 @@
+use std::fmt;
 use std::io;
 use thiserror::Error;
 
@@ -14,6 +15,9 @@ pub enum Error {
 
     #[error("Failed to parse Brewfile: {0}")]
     ParseError(String),
+
+    #[error("Format error")]
+    Fmt(#[from] fmt::Error),
 
     #[error("IO error: {0}")]
     Io(#[from] io::Error),

@@ -1,5 +1,16 @@
 use brewdiff;
+use std::fmt::Write;
 use std::path::Path;
+
+// Wrapper to make stdout work with fmt::Write
+struct StdoutWriter;
+
+impl Write for StdoutWriter {
+    fn write_str(&mut self, s: &str) -> std::fmt::Result {
+        print!("{}", s);
+        Ok(())
+    }
+}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Brewdiff Example - Comparing Homebrew state with nix-darwin profile\n");
@@ -42,8 +53,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Show the diff
     println!("\n🔄 Differences (current vs intended):");
+    let mut writer = StdoutWriter;
     let lines = brewdiff::write_homebrew_diffln(
-        &mut std::io::stdout(),
+        &mut writer,
         // Current system as "old"
         Path::new("/run/current-system"),
         // Same profile as "new" to show drift

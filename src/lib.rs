@@ -4,7 +4,7 @@ pub mod error;
 pub mod intent;
 pub mod state;
 
-use std::io::Write;
+use std::fmt::Write;
 use std::path::{Path, PathBuf};
 use std::thread::{self, JoinHandle};
 
@@ -72,7 +72,7 @@ mod tests {
         let _ = get_current_homebrew_state;
         let _ = extract_nix_darwin_intent;
         let _ = spawn_homebrew_diff;
-        let _ = write_homebrew_diffln::<Vec<u8>>;
-        let _ = write_homebrew_stats::<Vec<u8>>;
+        let _ = write_homebrew_diffln::<String>;
+        let _ = write_homebrew_stats::<String>;
     }
 }
